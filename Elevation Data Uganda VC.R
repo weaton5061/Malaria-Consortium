@@ -56,8 +56,8 @@ plot(adm2.uga)
 
 # load uganda water boundary
 
-uga_water <- st_read("/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Uganda Water Bodies/Ug_Waterbodies/Ug_Waterbodies.shp") # this one is better
-uga_water_2 <-st_read("/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Uganda Water Bodies/uga_water_areas_dcw/uga_water_areas_dcw.shp")
+uga_water <- st_read("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Uganda Water Bodies\\Ug_Waterbodies\\Ug_Waterbodies.shp") # this one is better?
+uga_water_2 <-st_read("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Uganda Water Bodies\\uga_water_areas_dcw\\uga_water_areas_dcw.shp")
 
 plot(adm0.uga)
 #plot(uga_water, add=TRUE)
@@ -67,6 +67,8 @@ plot(uga_water) # this layer looks better
 # plot blue boundary country
 plot(adm0.uga, col="light blue", border = "light blue")
 plot(adm1.uga, add=TRUE)
+
+# LEFT OFF HERE 6-19-20 CHANGE FILE DIRECTORIES BELOW
 
 # Bring in Alyssa's district shapefile then mask and crop to water layer
 setwd("/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data")
