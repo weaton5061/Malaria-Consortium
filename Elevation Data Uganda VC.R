@@ -5,14 +5,18 @@
 # Date modified 6-19-20
 #--------------------------------------------------------------------------------
 
+# Install packages
+library("raster")
+library("Rtools")
+
 # Load Packages ####################
-require(raster)
-require(rgdal)
-require(sp)
-require(data.table)
-require(RCurl)
-require(R.utils)
-require(gdalUtils)
+library("raster")
+library("rgdal")
+library("sp")
+library("data.table")
+library("RCurl")
+library("R.utils")
+library("gdalUtils")
 
 library(rgeos)
 library(rasterVis)
@@ -40,16 +44,15 @@ cat("\014")
 ##############################
 
 # Load admin boundaries ---------------------------------------------------
-adm0.uga <- subset(getData("GADM", country = "UGA", level = 0)) # Country
-plot(adm0.uga, add = TRUE)
+
 adm0.uga <- subset(getData("GADM", country = "UGA", level = 0)) # Country
 plot(adm0.uga)
 adm1.uga <- subset(getData("GADM", country = "UGA", level = 1)) # District
 plot(adm1.uga)
 adm2.uga <- subset(getData("GADM", country = "UGA", level = 2)) # City Council? District?
 plot(adm2.uga)
-adm3.uga <- subset(getData("GADM", country = "UGA", level = 3))
-plot(adm3.uga)
+# adm3.uga <- subset(getData("GADM", country = "UGA", level = 3))
+# plot(adm3.uga)
 
 # load uganda water boundary
 
