@@ -26,7 +26,14 @@ library(tmap)
 library(ggplot2)
 library(sf)
 library(maptools)
+library(tmaptools)
 library(exactextractr)
+library(BAMMtools)
+library(shinyjs)
+library(shiny)
+
+# We can list the libraries that are actually loaded doing
+(.packages())
 
 #####################################
 
@@ -51,107 +58,119 @@ adm1.uga <- subset(getData("GADM", country = "UGA", level = 1)) # District
 plot(adm1.uga)
 adm2.uga <- subset(getData("GADM", country = "UGA", level = 2)) # City Council? District?
 plot(adm2.uga)
-# adm3.uga <- subset(getData("GADM", country = "UGA", level = 3))
-# plot(adm3.uga)
+# Bring in n= 135 districts shapefile
+uga_2020 <- st_read(dsn = "D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Administrative Boundaries\\Uganda\\admbnd_2020\\uga_admbnda_adm2_2020.shp")
+tm_shape(uga_2020) + tm_polygons("ADM1_EN") + tm_legend(show=FALSE) # Verify shapefile - LOOKS GOOD!
 
 # load uganda water boundary
-
 uga_water <- st_read("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Uganda Water Bodies\\Ug_Waterbodies\\Ug_Waterbodies.shp") # this one is better?
 uga_water_2 <-st_read("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Uganda Water Bodies\\uga_water_areas_dcw\\uga_water_areas_dcw.shp")
 
 plot(adm0.uga)
 #plot(uga_water, add=TRUE)
-plot(uga_water_2, add = TRUE)
+plot(uga_water_2)
 plot(uga_water) # this layer looks better
 
 # plot blue boundary country
 plot(adm0.uga, col="light blue", border = "light blue")
 plot(adm1.uga, add=TRUE)
 
-# LEFT OFF HERE 6-19-20 CHANGE FILE DIRECTORIES BELOW
-
 # Bring in Alyssa's district shapefile then mask and crop to water layer
-setwd("/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data")
-uga_admin <- st_read(dsn = "/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Administrative Boundaries/Uganda/uga_admbnda_adm1_UBOS_v2.shp")
+setwd("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data")
+uga_admin <- st_read(dsn = "D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Administrative Boundaries\\Uganda\\uga_admbnda_adm1_UBOS_v2.shp")
+plot(uga_admin)
+tm_shape(uga_water_2) + tm_fill()
+tm_shape(uga_admin) + tm_fill()
 uga_water_mask <- mask(x = uga_water_2, mask = uga_admin) # Mask the district admin shapefile
 
 # Bring in Alyssa's district shapefile with water layer clipped out
-uga_admin_no_water <- st_read(dsn = "/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Shapefiles/uga_adm1_UBOS_clipped.shp")
-plot(uga_admin_no_water) # ensure correct layer - looks good
+uga_admin_no_water <- st_read(dsn = "D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Shapefiles\\uga_adm1_UBOS_clipped.shp")
+tm_shape(uga_admin_no_water) + tm_polygons() # This layer produces image of Uganda with islands, no water shown, but islands are distinguishable
+tm_shape(adm0.uga) + tm_fill(col="lightblue", lwd=0.18) + tm_shape(uga_admin_no_water) + tm_polygons(lwd=0.30) # This layer produces image of Uganda with islands and proper amt of H2O
 
 # plot to verify alignment and to see what combined water and admin boundary should look like
 #tm_shape(uga_admin) + tm_polygons() + tm_shape(uga_water_2) + tm_polygons(col="lightblue")
-tm_shape(uga_admin) + tm_polygons(lwd=0.30) + tm_shape(uga_water) + tm_polygons(col="lightblue", lwd=0.18)
+# tm_shape(uga_admin) + tm_polygons(lwd=0.30) + tm_shape(uga_water) + tm_polygons(col="lightblue", lwd=0.18)
 
-# crop the shapefile
-plot(clip, col = "lightblue")
-
-# Crop the raster
-cropped <- crop(x=masked, y = extent(uga_admin_no_water))
-plot(cropped)
+# # crop the shapefile
+# plot(clip, col = "lightblue")
+# 
+# # Crop the raster
+# cropped <- crop(x=masked, y = extent(uga_admin_no_water))
+# plot(cropped)
 
 
 # Import Data ---------------------------------------------------
-# srtm <- getData('SRTM', lon=30, lat=03, path="/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Elevation Data")
-srtm <-raster("/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/srtm_42_12.tif")
-plot(srtm)
+# srtm <- getData('SRTM', lon=30, lat=03, path=""D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Elevation Data")
+srtm <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_42_12.tif")
+# plot(srtm)
+# tm_shape(srtm) + tm_raster(srtm)
 #Download/bring in two more tiles
-# srtm2 <- getData('SRTM', lon=34, lat=00)
-srtm2 <-raster("/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/srtm_42_13.tif")
-plot(srtm2)
-# srtm3 <- getData('SRTM', lon=35, lat=01)
-srtm3 <-raster("/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/srtm_43_12.tif")
-plot(srtm2)
-plot(srtm3)
-# srtm4 <- getData('SRTM', lon=33, lat=04)
-srtm4 <-raster("/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/srtm_43_13.tif")
-plot(srtm2)
-plot(srtm4)
-# srtm5 <- getData('SRTM', lon=29, lat=01)
-srtm5 <-raster("/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/srtm_44_12.tif")
-plot(srtm2)
-plot(srtm5)
+srtm2 <- getData('SRTM', lon=34, lat=00)
+srtm2 <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_42_13.tif")
+# plot(srtm2)
+srtm3 <- getData('SRTM', lon=35, lat=01)
+srtm3 <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_43_12.tif")
+# plot(srtm2)
+# plot(srtm3)
+srtm4 <- getData('SRTM', lon=33, lat=04)
+srtm4 <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_43_13.tif")
+# plot(srtm2)
+# plot(srtm4)
+srtm5 <- getData('SRTM', lon=29, lat=01)
+srtm5 <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_44_12.tif")
+# plot(srtm2)
+# plot(srtm5)
 # srtm6 <- getData('SRTM', lon=29, lat=00)
 
-#Mosaic/merge srtm tiles
+# Mosaic/merge srtm tiles ------------------------------------------------------------------
 srtmmosaic <- mosaic(srtm, srtm2, srtm3, srtm4, srtm5, fun=mean)
+# tm_shape(srtmmosaic) + tm_raster(srtmmosaic)
 plot(srtmmosaic)
-plot(adm0.uga, add = TRUE)
+plot(adm0.uga, add = TRUE) # Verify raster mosic covers admin 0 of uga
 
-# ## crop stack (literally cropping an image. the crop is the extent of haiti with a little buffer)
-# RFstack <- crop(RFstack, extent(uga_admin_no_water)+.1)
-# RFstack_masked <- mask(RFstack, uga_admin_no_water)
-
-# Mask the raster
-masked <- mask(x = srtmmosaic, mask = uga_admin_no_water)
+# Mask the raster (requires library("rgdal") package to be loaded) ------------------------
+masked <- raster::mask(x = srtmmosaic, mask = uga_admin_no_water) 
 plot(masked)
-
-# Crop the raster
-cropped <- crop(x=masked, y = extent(uga_admin_no_water)+.1)
+cropped <- crop(x=masked, y = extent(uga_admin_no_water)+.1) # Crop the raster
 plot(cropped)
-
-# attempt clip of raster layer instead of boundary layer
-## crop and mask
-## Example RasterLayer
-
-# this almost works - it cropps out the land. I want to crop out the water --------
-# r2 <- crop(cropped, extent(uga_water))
-# r3 <- mask(r2, uga_water)
-# ## Check that it worked
-# plot(r3)
-# plot(uga_water, add=TRUE, lwd=2)
-
-# mask and crop the elevation raster again so that water boundary is removed
+# Mask and crop the elevation raster again so that water boundary is removed
 masked2 <- mask(x=cropped, mask = uga_admin_no_water)
 plot(masked2)
 cropped2 <- crop(x=masked2, y=extent(uga_admin_no_water))
 plot(cropped2)
 
-### Extracting mean elevation to district
-uganda_elevation_extract <- st_as_sf(uga_admin_no_water)# This is already loaded, but am reloading shapefile/admin units again using this method
-uganda_elevation_extract$mean_elevation <- exact_extract(cropped2, uga_admin_no_water, 'mean')
+# Extract mean elevation to district -------------------------------------------------------------------
+uganda_elevation_extract <- st_as_sf(uga_2020)
+uganda_elevation_extract$mean_elevation <- exact_extract(cropped2, uga_2020, 'mean')
+
+# find natural jenks to play around with and map by that
+
+# map by 1200 - 1600 m, < 1200 m, > 1600 m
+getJenksBreaks(uganda_elevation_extract$mean_elevation, 3, subset = NULL) 
+# [1]  661.5720  898.5173 1145.8260 1327.1039 1530.2404 [6] 1839.9542 2364.8369
+
+# View color options
+palette_explorer()
+tmap.pal.info
+
+# View chloropleth map of result
+tm_shape(uga_2020) + tm_fill(col="grey80") + tm_shape(uga.elev.sf) + tm_fill("elev_class", title = "Uganda Elevation Classes", 
+                                                                                          palette = "Blues")
++ 
+    tm_scale_bar() + tm_compass(position = c("left","top")) +  tm_layout(frame = FALSE, legend.outside = TRUE, legend.outside.position = "right")
 
 uganda_elevation_extract <- as.data.frame(uganda_elevation_extract)
+class(uganda_elevation_extract)
+View(uganda_elevation_extract)
+
+# make elevation classes binary (within 12-1600 m OR <1200 m or >1600)
+uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation > 1600] <- 0
+uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation <=1600 & uganda_elevation_extract$mean_elevation >= 1200] <- 1 #Uganda experiences stable endemic malaria in 95 % of the areas of altitude 1200 to 1600 m (Muwanika et al. 2019)
+uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation < 1200] <- 0
+
+# convert dataframe back to shapefile
+uga.elev.sf <- st_sf(uganda_elevation_extract)
 
 # go with following elevation categories from Muwanika et al. 2019
 # <1200 m, 1200 to 1600m and > 1600 meters, may not have weight, can go in equal weighted group
@@ -177,8 +196,8 @@ tm_shape(cropped2) + tm_raster()
 tm_shape(cropped2) + tm_raster(cropped2)
 
 # save raster file as geotiff
-uga_elev_raster <- writeRaster(cropped, filename="/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Elevation Data/uga_elev.tif", format="GTiff", overwrite=TRUE)
-uga_elv_raster <-writeRaster(cropped2, filename="/Volumes/Samsung T5/LACIE MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Elevation Data/uga_elev_no_water.tif", format="GTiff", overwrite=TRUE)
+uga_elev_raster <- writeRaster(cropped, filename="D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Elevation Data/uga_elev.tif", format="GTiff", overwrite=TRUE)
+uga_elv_raster <-writeRaster(cropped2, filename="D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Elevation Data/uga_elev_no_water.tif", format="GTiff", overwrite=TRUE)
 
 
 
