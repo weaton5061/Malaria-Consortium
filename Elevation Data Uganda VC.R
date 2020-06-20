@@ -100,24 +100,24 @@ tm_shape(adm0.uga) + tm_fill(col="lightblue", lwd=0.18) + tm_shape(uga_admin_no_
 # plot(cropped)
 
 
-# Import Data ---------------------------------------------------
-# srtm <- getData('SRTM', lon=30, lat=03, path=""D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Elevation Data")
+# Import Data ------------------------------------------------------------------------------
+# srtm <- getData('SRTM', lon=30, lat=03)
 srtm <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_42_12.tif")
-# plot(srtm)
+plot(srtm)
 # tm_shape(srtm) + tm_raster(srtm)
 #Download/bring in two more tiles
-srtm2 <- getData('SRTM', lon=34, lat=00)
+# srtm2 <- getData('SRTM', lon=34, lat=00)
 srtm2 <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_42_13.tif")
 # plot(srtm2)
-srtm3 <- getData('SRTM', lon=35, lat=01)
+# srtm3 <- getData('SRTM', lon=35, lat=01)
 srtm3 <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_43_12.tif")
 # plot(srtm2)
 # plot(srtm3)
-srtm4 <- getData('SRTM', lon=33, lat=04)
+# srtm4 <- getData('SRTM', lon=33, lat=04)
 srtm4 <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_43_13.tif")
 # plot(srtm2)
 # plot(srtm4)
-srtm5 <- getData('SRTM', lon=29, lat=01)
+# srtm5 <- getData('SRTM', lon=29, lat=01)
 srtm5 <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_44_12.tif")
 # plot(srtm2)
 # plot(srtm5)
@@ -129,7 +129,7 @@ srtmmosaic <- mosaic(srtm, srtm2, srtm3, srtm4, srtm5, fun=mean)
 plot(srtmmosaic)
 plot(adm0.uga, add = TRUE) # Verify raster mosic covers admin 0 of uga
 
-# Mask the raster (requires library("rgdal") package to be loaded) ------------------------
+# Mask the raster (requires library("rgdal") package to be loaded) -------------------------
 masked <- raster::mask(x = srtmmosaic, mask = uga_admin_no_water) 
 plot(masked)
 cropped <- crop(x=masked, y = extent(uga_admin_no_water)+.1) # Crop the raster
@@ -140,41 +140,41 @@ plot(masked2)
 cropped2 <- crop(x=masked2, y=extent(uga_admin_no_water))
 plot(cropped2)
 
-# Extract mean elevation to district -------------------------------------------------------------------
+# Extract mean elevation to district -------------------------------------------------------
 uganda_elevation_extract <- st_as_sf(uga_2020)
 uganda_elevation_extract$mean_elevation <- exact_extract(cropped2, uga_2020, 'mean')
 
-# find natural jenks to play around with and map by that
-
-# map by 1200 - 1600 m, < 1200 m, > 1600 m
-getJenksBreaks(uganda_elevation_extract$mean_elevation, 3, subset = NULL) 
-# [1]  661.5720  898.5173 1145.8260 1327.1039 1530.2404 [6] 1839.9542 2364.8369
-
-# View color options
+# View color options  ----------------------------------------------------------------------
 palette_explorer()
 tmap.pal.info
 
-# View chloropleth map of result
-tm_shape(uga_2020) + tm_fill(col="grey80") + tm_shape(uga.elev.sf) + tm_fill("elev_class", title = "Uganda Elevation Classes", 
-                                                                                          palette = "Blues")
-+ 
-    tm_scale_bar() + tm_compass(position = c("left","top")) +  tm_layout(frame = FALSE, legend.outside = TRUE, legend.outside.position = "right")
-
+# Convert to data frame  -------------------------------------------------------------------
 uganda_elevation_extract <- as.data.frame(uganda_elevation_extract)
 class(uganda_elevation_extract)
 View(uganda_elevation_extract)
 
+# Create elevation classes   ---------------------------------------------------------------
+# go with following elevation categories from Muwanika et al. 2019
+# <1200 m, 1200 to 1600m and > 1600 meters, may not have weight, can go in equal weighted group
+# found in low densities above 1700 m in Kenya (The Effects of Climatic Factors on the Distribution and Abundance of Malaria Vectors in Kenya)
 # make elevation classes binary (within 12-1600 m OR <1200 m or >1600)
-uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation > 1600] <- 0
-uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation <=1600 & uganda_elevation_extract$mean_elevation >= 1200] <- 1 #Uganda experiences stable endemic malaria in 95 % of the areas of altitude 1200 to 1600 m (Muwanika et al. 2019)
-uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation < 1200] <- 0
+uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation > 1600] <- "< 1200 m or > 1600 m"
+uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation <=1600 & uganda_elevation_extract$mean_elevation >= 1200] <- "1200 m to 1600 m" #Uganda experiences stable endemic malaria in 95 % of the areas of altitude 1200 to 1600 m (Muwanika et al. 2019)
+uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation < 1200] <- "< 1200 m or > 1600 m"
+# uganda_elevation_extract$elev_class <- as.character(uganda_elevation_extract$elev_class)
+uganda_elevation_extract$elev_class <- as.factor(uganda_elevation_extract$elev_class) # convert to factor variable
 
 # convert dataframe back to shapefile
 uga.elev.sf <- st_sf(uganda_elevation_extract)
 
-# go with following elevation categories from Muwanika et al. 2019
-# <1200 m, 1200 to 1600m and > 1600 meters, may not have weight, can go in equal weighted group
-# found in low densities above 1700 m in Kenya (The Effects of Climatic Factors on the Distribution and Abundance of Malaria Vectors in Kenya)
+
+# View chloropleth map of result
+tm_shape(uga_2020) + tm_fill(col="grey80") + tm_shape(uga.elev.sf) + 
+    tm_fill("elev_class", title = "Uganda Elevation Classes", style="cat",palette="Paired") + 
+    tm_borders(lwd = 0.2) +
+    tm_scale_bar() + tm_compass(position = c("left","top")) +  
+    tm_layout(frame = FALSE, legend.outside = TRUE, legend.outside.position = "right")
+
 
 # Calculate mean rf for all months available
 Uganda_dis_new <- cbind(Uganda_dis,mean_rf_all=rowMeans(Uganda_dis[7:30], na.rm=TRUE))
