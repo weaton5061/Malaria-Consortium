@@ -63,8 +63,8 @@ uga_2020 <- st_read(dsn = "D:\\LACIE MacOS Extended\\Tulane Research Projects\\M
 tm_shape(uga_2020) + tm_polygons("ADM1_EN") + tm_legend(show=FALSE) # Verify shapefile - LOOKS GOOD!
 
 # load uganda water boundary
-uga_water <- st_read("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Uganda Water Bodies\\Ug_Waterbodies\\Ug_Waterbodies.shp") # this one is better?
-uga_water_2 <-st_read("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Uganda Water Bodies\\uga_water_areas_dcw\\uga_water_areas_dcw.shp")
+uga_water <- st_read("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Uganda Water Bodies\\Ug_Waterbodies\\Ug_Waterbodies.shp") # too much water
+uga_water_2 <-st_read("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Uganda Water Bodies\\uga_water_areas_dcw\\uga_water_areas_dcw.shp") # right amt of water
 
 plot(adm0.uga)
 #plot(uga_water, add=TRUE)
@@ -79,7 +79,8 @@ plot(adm1.uga, add=TRUE)
 setwd("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data")
 uga_admin <- st_read(dsn = "D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Administrative Boundaries\\Uganda\\uga_admbnda_adm1_UBOS_v2.shp")
 plot(uga_admin)
-tm_shape(uga_water_2) + tm_fill()
+tm_shape(uga_water) + tm_fill() # too much water
+tm_shape(uga_water_2) + tm_fill() # just the right amount of water
 tm_shape(uga_admin) + tm_fill()
 uga_water_mask <- mask(x = uga_water_2, mask = uga_admin) # Mask the district admin shapefile
 
@@ -136,6 +137,29 @@ cropped <- crop(x=masked, y = extent(uga_admin_no_water)+.1) # Crop the raster
 plot(cropped)
 # Mask and crop the elevation raster again so that water boundary is removed
 masked2 <- mask(x=cropped, mask = uga_admin_no_water)
+plot(masked2)
+cropped2 <- crop(x=masked2, y=extent(uga_admin_no_water))
+plot(cropped2)
+
+####################################################################
+##### LEFT OFF HERE ON 6-20-2020 TRYIN TO CROP WATER BOUNDARY FROM 
+SHAPEFILE ##### IS THIS NECESARRY FOR NEXT STEPS? I DON'T THINK SO
+# VERIFY MEAN ELEVATION FOR LAKE BOUNDARY REGION
+######################################################################
+
+# Attempt mask and crop of uga_water and uga_2020 shapefiles ------------------------------
+attempt.sp <- sf_as_st(uga_water)
+clip <- gIntersection(uga_2020, uga_water, byid = TRUE, drop_lower_td = TRUE) #clip polygon 2 with polygon 1
+plot(clip, col = "lightblue")
+
+## Clip the map
+out <- gIntersection(uga_2020, CP, byid=TRUE)
+
+tm_shape(uga_2020_water_clip) + tm_fill()
+#confirm clipping worked
+plot(county_clipped)
+
+uga_2020_water_mask <- raster::mask(x=uga_2020, mask = uga_water)
 plot(masked2)
 cropped2 <- crop(x=masked2, y=extent(uga_admin_no_water))
 plot(cropped2)
