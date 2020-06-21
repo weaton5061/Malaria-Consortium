@@ -109,86 +109,28 @@ srtm5 <-raster("/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects
 
 # Mosaic/merge srtm tiles ------------------------------------------------------------------
 srtmmosaic <- mosaic(srtm, srtm2, srtm3, srtm4, srtm5, fun=mean)
-# tm_shape(srtmmosaic) + tm_raster(srtmmosaic)
-plot(srtmmosaic)
-plot(adm0.uga, add = TRUE) # Verify raster mosic covers admin 0 of uga
 
 # Bring in arc gis clipped district boundary 6-21-20
 uga_n_135_water_clip <- st_read(dsn = "/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Shapefiles/Uganda_n_135_districts_water_clip.shp")
 
-# Mask the raster (requires library("rgdal") package to be loaded) -------------------------
-cropped4 <- crop(srtmmosaic, uga_n_135_water_clip)
-masked4 <- mask(srtmmosaic, uga_n_135_water_clip)
-
-uga_elev_water_clip) <- writeRaster(cropped4, filename="/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/DataElevation Data/uga_elev_water_clip.tif", format="GTiff", overwrite=TRUE)
-
-# masked <- raster::mask(x = srtmmosaic, mask = uga_admin_no_water) 
-# plot(masked)
-# cropped <- crop(x=masked, y = extent(uga_admin_no_water)+.1) # Crop the raster
-# plot(cropped)
-# # Mask and crop the elevation raster again so that water boundary is removed
-# masked2 <- mask(x=cropped, mask = uga_admin_no_water)
-# plot(masked2)
-# cropped2 <- crop(x=masked2, y=extent(uga_admin_no_water))
-# plot(cropped2)
-
-# map the raster input for report
-# tm_shape(cropped2) + tm_raster(cropped2)
-
-####################################################################
-##### LEFT OFF HERE ON 6-20-2020 TRYIN TO CROP WATER BOUNDARY FROM 
-# SHAPEFILE ##### IS THIS NECESARRY FOR NEXT STEPS? I DON'T THINK SO
-# VERIFY MEAN ELEVATION FOR LAKE BOUNDARY REGION
-######################################################################
-
-# Attempt mask and crop of uga_water and uga_2020 shapefiles ------------------------------
-attempt.sp <- sf_as_st(uga_water)
-clip <- gIntersection(uga_2020, uga_water, byid = TRUE, drop_lower_td = TRUE) #clip polygon 2 with polygon 1
-plot(clip, col = "lightblue")
-
-## Clip the map
-out <- gIntersection(uga_2020, CP, byid=TRUE)
-
-tm_shape(uga_2020_water_clip) + tm_fill()
-#confirm clipping worked
-plot(county_clipped)
-
-uga_2020_water_mask <- raster::mask(x=uga_2020, mask = uga_water)
-plot(masked2)
-cropped2 <- crop(x=masked2, y=extent(uga_admin_no_water))
-plot(cropped2)
-
 ###########################################################################
 ###### 6-21-20 Bring in elevation raster file tif (created previously)
+###### Can start from here if have raster file as tif
 ###########################################################################
 DEM_uga <- raster("/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Elevation Data/uga_elev_no_water.tif")
-tm_shape(adm0.uga) + tm_fill(col="lightblue") + tm_shape(DEM_uga) +                      # create raster elevation map
-    tm_raster(palette = 'viridis', title = "Elevation (m)") 
-+
-    tm_scale_bar() + tm_compass(position = c("left","top")) +  
-    tm_layout(frame = FALSE, legend.outside = TRUE, legend.outside.position = "right")
 
-tm_shape(DEM_uga) + tm_raster(title = "Elevation (m)")
-
-# Extract mean elevation to district -------------------------------------------------------
-uganda_elevation_extract <- st_as_sf(uga_2020)
-uganda_elevation_extract$mean_elevation <- exact_extract(cropped2, uga_2020, 'mean')
-
-# Try exact of mean elevation using arc gis shapefile created on 6-21-20 (uga_n_135_water_clip)
+# Extract mean elevation to district (using arc gis shapefile created on 6-21-20 (uga_n_135_water_clip) -------------------------------------------------------
 uganda_elevation_extract <- st_as_sf(uga_n_135_water_clip)
 uganda_elevation_extract$mean_elevation <- exact_extract(DEM_uga, uga_n_135_water_clip, 'mean')
 uganda_elevation_extract <- as.data.frame(uganda_elevation_extract) # convert to data frame
-uga_elev_n_135 <- uganda_elevation_extract[c(5,8)] # only keep ADM2_EN and elevation (2 columns of data)
+uga_elev_n_135 <- uganda_elevation_extract[c(5,8)] # only keep ADM2_EN and elevation variable for export
 write.csv(uga_elev_n_135,"/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Elevation Data/uga_elev_n_135.csv", row.names = TRUE) # export table
 
 # View color options  ----------------------------------------------------------------------
 palette_explorer()
 tmap.pal.info
 
-class(uganda_elevation_extract)
-View(uganda_elevation_extract)
-
-# Create elevation classes   ---------------------------------------------------------------
+# Create elevation classes  ---------------------------------------------------------------
 # go with following elevation categories from Muwanika et al. 2019
 # <1200 m, 1200 to 1600m and > 1600 meters, may not have weight, can go in equal weighted group
 # found in low densities above 1700 m in Kenya (The Effects of Climatic Factors on the Distribution and Abundance of Malaria Vectors in Kenya)
@@ -198,27 +140,23 @@ uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation <=16
 uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation < 1200] <- "< 1200 m or > 1600 m"
 # uganda_elevation_extract$elev_class <- as.character(uganda_elevation_extract$elev_class)
 uganda_elevation_extract$elev_class <- as.factor(uganda_elevation_extract$elev_class) # convert to factor variable
+uga.elev.sf <- st_sf(uganda_elevation_extract) # convert dataframe back to shapefile
 
-# convert dataframe back to shapefile
-uga.elev.sf <- st_sf(uganda_elevation_extract)
-
-
-# View chloropleth map of result
+# View chloropleth map of result   ---------------------------------------------------------------
 tm_shape(adm0.uga) + tm_fill(col="lightblue") + tm_shape(uga.elev.sf) + 
     tm_fill("elev_class", title = "Uganda\nDistrict mean elevation", style="cat", palette = "-viridis") + 
     tm_borders(lwd = 0.2) +
     tm_scale_bar() + tm_compass(position = c("left","top")) +  
     tm_layout(frame = FALSE, legend.outside = TRUE, legend.outside.position = "right")
 
-uga_elev_map_135 <- tm_shape(adm0.uga) + tm_fill(col="lightblue") + tm_shape(uga.elev.sf) + 
+uga_elev_map_135 <- tm_shape(adm0.uga) + tm_fill(col="lightblue") + tm_shape(uga.elev.sf) +  # assign to obj
     tm_fill("elev_class", title = "Uganda\nDistrict mean elevation", style="cat", palette = "-viridis") + 
     tm_borders(lwd = 0.2) +
     tm_scale_bar() + tm_compass(position = c("left","top")) +  
     tm_layout(frame = FALSE, legend.outside = TRUE, legend.outside.position = "right")
 
-# save image
-# set working drive
-setwd("/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/Map outputs/Chloropleth Elevation")
+# save image  ---------------------------------------------------------------
+setwd("/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/Map outputs/Chloropleth Elevation") # set working drive
 tmap_save(uga_elev_map_135, "uga_chloro_elev_class_map_135.png", width =6.78, height=5, units ='in', asp = 0)
 
 # Calculate mean rf for all months available
@@ -226,34 +164,20 @@ Uganda_dis_new <- cbind(Uganda_dis,mean_rf_all=rowMeans(Uganda_dis[7:30], na.rm=
 Uganda_dis_new_2 <- cbind(Uganda_dis_new,mean_rf_2020=rowMeans(Uganda_dis[27:30], na.rm=TRUE))
 Uganda_dis_new_2$rf_anomaly <- Uganda_dis_new_2$mean_rf_2020 - Uganda_dis_new_2$mean_rf_all
 
-# system.time(print(levelplot(r, maxpixels = 1e4)))
-# set max size of raster, in terms of number of raster cells
-tmap_options(max.raster = c(c(plot = 1e7, view = 1e6)))
-# reset all options
-tmap_options_reset()
+# save raster file as geotiff - saved previously 
+# uga_elev_raster <- writeRaster(cropped, filename="/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/DataElevation Data/uga_elev.tif", format="GTiff", overwrite=TRUE)
+# uga_elv_raster <-writeRaster(cropped2, filename="/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/DataElevation Data/uga_elev_no_water.tif", format="GTiff", overwrite=TRUE)
 
-# image(cropped, col=inferno(256), bty="n", box=FALSE)
-tm_shape(cropped2) + tm_raster(cropped2, col=inferno(256))
-
-tm_shape(cropped2) + tm_raster(col=inferno(256))
-
-tm_shape(cropped2) + tm_raster()
-tm_shape(cropped2) + tm_raster(cropped2)
-
-# save raster file as geotiff
-uga_elev_raster <- writeRaster(cropped, filename="/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/DataElevation Data/uga_elev.tif", format="GTiff", overwrite=TRUE)
-uga_elv_raster <-writeRaster(cropped2, filename="/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/DataElevation Data/uga_elev_no_water.tif", format="GTiff", overwrite=TRUE)
-
-
-© 2020 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Help
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
+# 
+# © 2020 GitHub, Inc.
+# Terms
+# Privacy
+# Security
+# Status
+# Help
+# Contact GitHub
+# Pricing
+# API
+# Training
+# Blog
+# About
