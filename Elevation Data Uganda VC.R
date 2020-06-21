@@ -60,7 +60,7 @@ adm2.uga <- subset(getData("GADM", country = "UGA", level = 2)) # City Council? 
 plot(adm2.uga)
 # Bring in n= 135 districts shapefile
 uga_2020 <- st_read(dsn = "D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Administrative Boundaries\\Uganda\\admbnd_2020\\uga_admbnda_adm2_2020.shp")
-tm_shape(uga_2020) + tm_polygons("ADM1_EN") + tm_legend(show=FALSE) # Verify shapefile - LOOKS GOOD!
+tm_shape(uga_2020) + tm_borders(lwd=0.2)+ tm_fill("ADM2_EN") + tm_legend(show=FALSE) # Verify shapefile - LOOKS GOOD!
 
 # load uganda water boundary
 uga_water <- st_read("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Uganda Water Bodies\\Ug_Waterbodies\\Ug_Waterbodies.shp") # too much water
@@ -79,10 +79,15 @@ plot(adm1.uga, add=TRUE)
 setwd("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data")
 uga_admin <- st_read(dsn = "D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Administrative Boundaries\\Uganda\\uga_admbnda_adm1_UBOS_v2.shp")
 plot(uga_admin)
+
+st_is_valid(st_make_valid(uga_admin))  # not sure if I need this code
+st_is_valid(st_make_valid(uga_water))
+
+
 tm_shape(uga_water) + tm_fill() # too much water
-tm_shape(uga_water_2) + tm_fill() # just the right amount of water
-tm_shape(uga_admin) + tm_fill()
-uga_water_mask <- mask(x = uga_water_2, mask = uga_admin) # Mask the district admin shapefile
+tm_shape(uga_water_2) + tm_fill() # Warning message: the shape uga_water is invalid. See sf::st_is_valid
+tm_shape(uga_admin) + tm_fill() # good for mapping
+uga_water_mask <- mask(x = uga_water_2, mask = uga_admin) # Mask the district admin shapefile # not working?
 
 # Bring in Alyssa's district shapefile with water layer clipped out
 uga_admin_no_water <- st_read(dsn = "D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Shapefiles\\uga_adm1_UBOS_clipped.shp")
@@ -104,7 +109,7 @@ tm_shape(adm0.uga) + tm_fill(col="lightblue", lwd=0.18) + tm_shape(uga_admin_no_
 # Import Data ------------------------------------------------------------------------------
 # srtm <- getData('SRTM', lon=30, lat=03)
 srtm <-raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\srtm_42_12.tif")
-plot(srtm)
+# plot(srtm)
 # tm_shape(srtm) + tm_raster(srtm)
 #Download/bring in two more tiles
 # srtm2 <- getData('SRTM', lon=34, lat=00)
@@ -141,6 +146,9 @@ plot(masked2)
 cropped2 <- crop(x=masked2, y=extent(uga_admin_no_water))
 plot(cropped2)
 
+# map the raster input for report
+tm_shape(cropped2) + tm_raster(cropped2)
+
 ####################################################################
 ##### LEFT OFF HERE ON 6-20-2020 TRYIN TO CROP WATER BOUNDARY FROM 
 SHAPEFILE ##### IS THIS NECESARRY FOR NEXT STEPS? I DON'T THINK SO
@@ -163,6 +171,18 @@ uga_2020_water_mask <- raster::mask(x=uga_2020, mask = uga_water)
 plot(masked2)
 cropped2 <- crop(x=masked2, y=extent(uga_admin_no_water))
 plot(cropped2)
+
+###########################################################################
+###### 6-21-20 Bring in elevation raster file tif (created previously)
+###########################################################################
+DEM_uga <- raster("D:\\LACIE MacOS Extended\\Tulane Research Projects\\Malaria Consortium\\Data\\Elevation Data\\uga_elev_no_water.tif")
+tm_shape(adm0.uga) + tm_fill(col="lightblue") + tm_shape(DEM_uga) +                      # create raster elevation map
+    tm_raster(palette = 'viridis', title = "Elevation (m)") 
++
+    tm_scale_bar() + tm_compass(position = c("left","top")) +  
+    tm_layout(frame = FALSE, legend.outside = TRUE, legend.outside.position = "right")
+
+tm_shape(DEM_uga) + tm_raster(title = "Elevation (m)")
 
 # Extract mean elevation to district -------------------------------------------------------
 uganda_elevation_extract <- st_as_sf(uga_2020)
