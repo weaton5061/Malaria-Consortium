@@ -1,39 +1,8 @@
-#' Skip to content
-#' Search or jump to…
-#' 
-#' Pull requests
-#' Issues
-#' Marketplace
-#' Explore
-#' 
-#' @weaton5061 
-#' Learn Git and GitHub without any code!
-#'     Using the Hello World guide, you’ll start a branch, write comments, and open a pull request.
-#' 
-#' 
-#' weaton5061
-#' /
-#'     Malaria-Consortium
-#' 1
-#' 00
-#' Code
-#' Issues 0
-#' Pull requests 0 Actions
-#' Projects 0
-#' Wiki
-#' Security 0
-#' Insights
-#' Settings
-#' Malaria-Consortium/Elevation Data Uganda VC.R
-#' Eaton recieving memory errors
-#' 85e549c 2 hours ago
-#' 248 lines (197 sloc)  11.1 KB
-
 #--------------------------------------------------------------------------------
 # Extract elevation data from SRTM crop boundary layers, map, zonal statistics
 # Author: Will Eaton
 # Date created 6-16-20
-# Date modified 6-19-20
+# Date modified 6-21-20
 #--------------------------------------------------------------------------------
 
 # Install packages
@@ -84,16 +53,11 @@ cat("\014")
 ##############################
 
 # Load admin boundaries ---------------------------------------------------
-
 adm0.uga <- subset(getData("GADM", country = "UGA", level = 0)) # Country
-plot(adm0.uga)
 adm1.uga <- subset(getData("GADM", country = "UGA", level = 1)) # District
-plot(adm1.uga)
 adm2.uga <- subset(getData("GADM", country = "UGA", level = 2)) # City Council? District?
-plot(adm2.uga)
 # Bring in n= 135 districts shapefile
-uga_2020 <- st_read(dsn = "/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/DataAdministrative Boundaries\\Uganda\\admbnd_2020\\uga_admbnda_adm2_2020.shp")
-tm_shape(uga_2020) + tm_borders(lwd=0.2)+ tm_fill("ADM2_EN") + tm_legend(show=FALSE) # Verify shapefile - LOOKS GOOD!
+# uga_2020 <- st_read(dsn = "/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/DataAdministrative Boundaries\\Uganda\\admbnd_2020\\uga_admbnda_adm2_2020.shp")
 
 # Import Data ------------------------------------------------------------------------------
 # srtm <- getData('SRTM', lon=30, lat=03)
@@ -110,7 +74,7 @@ srtm5 <-raster("/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects
 # Mosaic/merge srtm tiles ------------------------------------------------------------------
 srtmmosaic <- mosaic(srtm, srtm2, srtm3, srtm4, srtm5, fun=mean)
 
-# Bring in arc gis clipped district boundary 6-21-20
+# Bring in clipped district boundary created in Arc Gis Pro & imported on 6-21-20
 uga_n_135_water_clip <- st_read(dsn = "/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Shapefiles/Uganda_n_135_districts_water_clip.shp")
 
 ###########################################################################
@@ -127,8 +91,8 @@ uga_elev_n_135 <- uganda_elevation_extract[c(5,8)] # only keep ADM2_EN and eleva
 write.csv(uga_elev_n_135,"/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/Data/Elevation Data/uga_elev_n_135.csv", row.names = TRUE) # export table
 
 # View color options  ----------------------------------------------------------------------
-palette_explorer()
-tmap.pal.info
+# palette_explorer()
+# tmap.pal.info
 
 # Create elevation classes  ---------------------------------------------------------------
 # go with following elevation categories from Muwanika et al. 2019
@@ -138,9 +102,8 @@ tmap.pal.info
 uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation > 1600] <- "< 1200 m or > 1600 m"
 uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation <=1600 & uganda_elevation_extract$mean_elevation >= 1200] <- "1200 m to 1600 m" #Uganda experiences stable endemic malaria in 95 % of the areas of altitude 1200 to 1600 m (Muwanika et al. 2019)
 uganda_elevation_extract$elev_class[uganda_elevation_extract$mean_elevation < 1200] <- "< 1200 m or > 1600 m"
-# uganda_elevation_extract$elev_class <- as.character(uganda_elevation_extract$elev_class)
 uganda_elevation_extract$elev_class <- as.factor(uganda_elevation_extract$elev_class) # convert to factor variable
-uga.elev.sf <- st_sf(uganda_elevation_extract) # convert dataframe back to shapefile
+uga.elev.sf <- st_sf(uganda_elevation_extract) # convert data frame back to shapefile
 
 # View chloropleth map of result   ---------------------------------------------------------------
 tm_shape(adm0.uga) + tm_fill(col="lightblue") + tm_shape(uga.elev.sf) + 
@@ -159,25 +122,11 @@ uga_elev_map_135 <- tm_shape(adm0.uga) + tm_fill(col="lightblue") + tm_shape(uga
 setwd("/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/Map outputs/Chloropleth Elevation") # set working drive
 tmap_save(uga_elev_map_135, "uga_chloro_elev_class_map_135.png", width =6.78, height=5, units ='in', asp = 0)
 
-# Calculate mean rf for all months available
-Uganda_dis_new <- cbind(Uganda_dis,mean_rf_all=rowMeans(Uganda_dis[7:30], na.rm=TRUE))
-Uganda_dis_new_2 <- cbind(Uganda_dis_new,mean_rf_2020=rowMeans(Uganda_dis[27:30], na.rm=TRUE))
-Uganda_dis_new_2$rf_anomaly <- Uganda_dis_new_2$mean_rf_2020 - Uganda_dis_new_2$mean_rf_all
+# # Calculate mean rf for all months available
+# Uganda_dis_new <- cbind(Uganda_dis,mean_rf_all=rowMeans(Uganda_dis[7:30], na.rm=TRUE))
+# Uganda_dis_new_2 <- cbind(Uganda_dis_new,mean_rf_2020=rowMeans(Uganda_dis[27:30], na.rm=TRUE))
+# Uganda_dis_new_2$rf_anomaly <- Uganda_dis_new_2$mean_rf_2020 - Uganda_dis_new_2$mean_rf_all
 
 # save raster file as geotiff - saved previously 
 # uga_elev_raster <- writeRaster(cropped, filename="/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/DataElevation Data/uga_elev.tif", format="GTiff", overwrite=TRUE)
 # uga_elv_raster <-writeRaster(cropped2, filename="/Volumes/LaCie 5TB/LaCie MacOS Extended/Tulane Research Projects/Malaria Consortium/DataElevation Data/uga_elev_no_water.tif", format="GTiff", overwrite=TRUE)
-
-# 
-# © 2020 GitHub, Inc.
-# Terms
-# Privacy
-# Security
-# Status
-# Help
-# Contact GitHub
-# Pricing
-# API
-# Training
-# Blog
-# About
