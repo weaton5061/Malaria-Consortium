@@ -113,20 +113,23 @@ nga_master6$smc_score_weighted <- nga_master6$smc_weight_0_82 * nga_master6$SMC_
 
 
 # Sort nga_master6 by NAME_2 ----------------------------------------------
-
+nga_master6 <- nga_master6[order(nga_master6$NAME_2),]                            # sort nga_master6 by NAME_2
 
 # Merge adm2.nga with nga_master6 dataset ---------------------------------
+nga_master7 <- merge(adm2.nga,nga_master6,by="NAME_2", all = TRUE)          # merge nga_master6 and adm2.nga by NAME_2
 
-
+nga_master7.spdf <- merge(adm2.nga, nga_master6,by="NAME_2", duplicateGeoms = T)
+    
 
 # Create SMC map ----------------------------------------------------------
 
+# compass type, one of: "arrow", "4star", "8star", "radar", "rose". 
+# The default is controlled by tm_layout (which uses "arrow" for the default style)
 
-flood_map_redo.spdf <- merge(adm2.nga, flood_map_redo, by="ADM1_EN", all = TRUE)
 
-tm_shape(adm0.uga) + tm_fill(col="lightblue") + tm_shape(flood_map_redo.spdf) + 
-    tm_fill("Flooding", title = "Flooding reported ", n=2, style = "cat", palette = "Reds", labels = c("No", "Yes")) + 
-    tm_scale_bar() + tm_compass(position = c("left","top")) + 
+tm_shape(adm0.nga) + tm_fill(col="lightblue") + tm_shape(nga_master7.spdf) + 
+    tm_fill("smc_score_weighted", title = "SMC LGAs ", n=2, style = "cat", palette = "Reds", labels = c("No", "Yes")) + 
+    tm_scale_bar() + tm_compass( position = c("left","top")) + # style = "4star",
     tm_layout(frame = FALSE, legend.outside = TRUE, legend.outside.position = "right")
 
 # Assign flood map to object score_sum_map
